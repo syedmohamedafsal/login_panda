@@ -75,17 +75,17 @@ class _LoginFormState extends State<LoginForm> {
         return;
       }
 
-      String email = emailController.text;
-      String password = passwordController.text;
+      String email = emailController.text.trim();
+      String password = passwordController.text.trim();
 
-      if (email == "admin@gmail.com" && password == "123456") {
+      if (email == "afsal@gmail.com" && password == "afsal") {
         widget.controller.success();
       } else {
         widget.controller.fail();
       }
 
       // 3. Unlock interaction after animation finishes
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 2), () { 
         if (mounted) setState(() => isSubmitting = false);
       });
     });
