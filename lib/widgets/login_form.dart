@@ -30,9 +30,8 @@ class _LoginFormState extends State<LoginForm> {
   void initState() {
     super.initState();
     emailFocus.addListener(() {
-      if (isSubmitting) return;
-
       if (emailFocus.hasFocus) {
+        if (isSubmitting) return;
         widget.controller.startChecking();
       } else {
         widget.controller.stopChecking();
@@ -40,10 +39,11 @@ class _LoginFormState extends State<LoginForm> {
     });
 
     passwordFocus.addListener(() {
-      if (isSubmitting) return;
-
       if (passwordFocus.hasFocus) {
+        if (isSubmitting) return;
         widget.controller.handsUp();
+      } else {
+        widget.controller.handsDown();
       }
     });
   }
@@ -60,28 +60,34 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   void login() {
-    print("LOGIN BUTTON PRESSED");
+    if (isSubmitting) return;
 
+    setState(() => isSubmitting = true);
+
+    // 1. Reset panda immediately
+    widget.controller.reset();
     FocusScope.of(context).unfocus();
 
-    if (!formKey.currentState!.validate()) return;
+    // 2. Wait for keyboard to begin dismissing
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (!formKey.currentState!.validate()) {
+        setState(() => isSubmitting = false);
+        return;
+      }
 
-    String email = emailController.text;
-    String password = passwordController.text;
+      String email = emailController.text;
+      String password = passwordController.text;
 
-    // Force hands down first
-    widget.controller.stopChecking();
-    widget.controller.handsDown();
-
-    // Wait for animation to finish
-    Future.delayed(const Duration(milliseconds: 400), () {
       if (email == "admin@gmail.com" && password == "123456") {
-        print("SUCCESS TRIGGER");
         widget.controller.success();
       } else {
-        print("FAIL TRIGGER");
         widget.controller.fail();
       }
+
+      // 3. Unlock interaction after animation finishes
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => isSubmitting = false);
+      });
     });
   }
 
@@ -142,8 +148,11 @@ class _LoginFormState extends State<LoginForm> {
                 prefixIcon: Icons.email,
                 controller: emailController,
                 focusNode: emailFocus,
-                onChanged: (val) =>
-                    widget.controller.moveEyes(val.length.toDouble()),
+                onChanged: (val) {
+                  if (!isSubmitting) {
+                    widget.controller.moveEyes(val.length.toDouble());
+                  }
+                },
               ),
               const SizedBox(height: 20),
 
